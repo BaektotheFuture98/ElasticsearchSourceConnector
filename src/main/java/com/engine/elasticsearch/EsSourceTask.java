@@ -75,6 +75,7 @@ public class EsSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
+        Thread.sleep(1000); // 폴링 주기 조절을 위해 1초 대기
         List<SourceRecord> records = new ArrayList<>();
         try {
             ArrayNode response = client.search(searchAfter);

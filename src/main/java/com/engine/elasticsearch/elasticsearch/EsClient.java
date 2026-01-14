@@ -29,7 +29,7 @@ public class EsClient implements AutoCloseable {
     private final String es_user;
     private final String es_password;
     private final int search_size;
-    private final String primary_field;
+    private final String sort;
 
     private RestClient client;
 
@@ -40,7 +40,7 @@ public class EsClient implements AutoCloseable {
         this.es_user = config.getString(EsSourceConnectorConfig.ES_USER);
         this.es_password = config.getString(EsSourceConnectorConfig.ES_PASSWORD);
         this.search_size = config.getInt(EsSourceConnectorConfig.SIZE);
-        this.primary_field = config.getString(EsSourceConnectorConfig.PRIMARY_FIELD);
+        this.sort = config.getString(EsSourceConnectorConfig.SORT);
         this.client = makeClient();
     }
     private RestClient makeClient() {
@@ -82,7 +82,7 @@ public class EsClient implements AutoCloseable {
 
     public ArrayNode search(String search_after) throws Exception {
         Request request = new Request("GET", "/" + es_index + "/_search?size=" + search_size);
-        JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, primary_field, search_after);
+        JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, sort, search_after);
         request.setEntity(new NStringEntity(queryNode.toString(), ContentType.APPLICATION_JSON));
         Response response = client.performRequest(request);
         if (response == null) {

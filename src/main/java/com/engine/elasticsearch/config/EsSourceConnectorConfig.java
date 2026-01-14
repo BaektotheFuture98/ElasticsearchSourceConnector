@@ -39,13 +39,14 @@ public class EsSourceConnectorConfig extends AbstractConfig {
     public static ConfigDef CONFIG = new ConfigDef()
             .define(ES_SERVERS, Type.STRING, Importance.HIGH, ES_SERVERS_DOC)
             .define(ES_INDEX, Type.STRING, Importance.HIGH, ES_INDEX_DOC)
-            .define(PRIMARY_FIELD, Type.STRING, null, Importance.MEDIUM, PRIMARY_FIELD_DOC)
-            .define(SORT, Type.STRING, null, Importance.HIGH, SORT_DOC)
-            .define(SIZE, Type.INT, 200, Importance.LOW, SIZE_DOC)
             .define(ES_QUERY, Type.STRING, Importance.HIGH, ES_QUERY_DOC)
+            .define(TOPIC, Type.STRING, Importance.HIGH, TOPIC_DOC)
             .define(ES_USER, Type.STRING, null, Importance.LOW, ES_USER_DOC)
             .define(ES_PASSWORD, Type.STRING, null,Importance.LOW, ES_PASSWORD_DOC)
-            .define(TOPIC, Type.STRING, Importance.HIGH, TOPIC_DOC);
+            ///  Primary_Filed가 없다면?
+            .define(PRIMARY_FIELD, Type.STRING, null, Importance.MEDIUM, PRIMARY_FIELD_DOC)
+            .define(SORT, Type.STRING, null, Importance.HIGH, SORT_DOC)
+            .define(SIZE, Type.INT, 200, Importance.LOW, SIZE_DOC);
 
     public EsSourceConnectorConfig(Map<String, String> props) {
         super(CONFIG, props); // AbstractConfig는 설정엔진
