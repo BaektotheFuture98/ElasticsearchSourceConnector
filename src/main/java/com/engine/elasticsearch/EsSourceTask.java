@@ -79,7 +79,7 @@ public class EsSourceTask extends SourceTask {
             List<SourceRecord> records = new ArrayList<>();
 
             for (JsonNode node : response) {
-                String currentSortValue = node.get("sort").toString();
+                String currentSortValue = node.get("sort").get(0).asString();
 
                 // Map<String, String> → Map<String, Object>로 변경
                 Map<String, Object> offset = Collections.singletonMap(
