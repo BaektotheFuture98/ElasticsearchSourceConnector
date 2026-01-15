@@ -76,24 +76,23 @@ public class EsSourceTask extends SourceTask {
             // 복구된 searchAfter를 사용하여 쿼리
             ArrayNode response = client.search(this.searchAfter);
 
-            if (response == null || response.size() == 0) return null;
+            if (response == null || response.isEmpty()) return null;
 
             List<SourceRecord> records = new ArrayList<>();
-            for (JsonNode node : response) {
-                // 현재 레코드의 sort 값을 추출 (예: [1736863200, "doc1"])
-                String currentSortValue = node.get("sort").toString();
 
+            for (JsonNode node : response) {
+                String currentSortValue = node.get("sort").toString();
                 // 3. 오프셋 생성: 읽을 때와 똑같은 OFFSET_VALUE_KEY 사용
                 Map<String, String> offset = Collections.singletonMap(OFFSET_VALUE_KEY, currentSortValue);
 
                 SourceRecord sourceRecord = new SourceRecord(
-                        this.sourcePartition,
-                        offset,
-                        this.topic,
-                        Schema.STRING_SCHEMA,
-                        node.get("_id").asText(), // Message Key로 문서 ID 사용 권장
-                        null,
-                        node.toString()
+                        this.sourcePartition, // source partition
+                        offset, // source offset
+                        this.topic, // 목적지 토픽
+                        Schema.STRING_SCHEMA, // 메시지 키 스키마
+                        currentSortValue, // 메시지 키
+                        null, // 메시지 값 스키마
+                        node.toString() // 메시지 값
                 );
                 records.add(sourceRecord);
 
