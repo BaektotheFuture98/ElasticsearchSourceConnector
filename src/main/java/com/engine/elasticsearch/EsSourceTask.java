@@ -70,10 +70,8 @@ public class EsSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
-        Thread.sleep(1000); // 폴링 주기 조절을 위해 1초 대기
-//        List<SourceRecord> records = new ArrayList<>();
+        Thread.sleep(1000);
         try {
-            // 복구된 searchAfter를 사용하여 쿼리
             ArrayNode response = client.search(this.searchAfter);
 
             if (response == null || response.isEmpty()) return null;
@@ -82,25 +80,27 @@ public class EsSourceTask extends SourceTask {
 
             for (JsonNode node : response) {
                 String currentSortValue = node.get("sort").toString();
-                // 3. 오프셋 생성: 읽을 때와 똑같은 OFFSET_VALUE_KEY 사용
-                Map<String, String> offset = Collections.singletonMap(OFFSET_VALUE_KEY, currentSortValue);
+
+                // Map<String, String> → Map<String, Object>로 변경
+                Map<String, Object> offset = Collections.singletonMap(
+                        OFFSET_VALUE_KEY,
+                        (Object) currentSortValue  // Object로 명시적 캐스팅
+                );
 
                 SourceRecord sourceRecord = new SourceRecord(
-                        this.sourcePartition, // source partition
-                        offset, // source offset
-                        this.topic, // 목적지 토픽
-                        Schema.STRING_SCHEMA, // 메시지 키 스키마
-                        currentSortValue, // 메시지 키
-                        null, // 메시지 값 스키마
-                        node.toString() // 메시지 값
+                        this.sourcePartition,
+                        offset,  // 이제 Map<String, Object> 타입
+                        this.topic,
+                        Schema.STRING_SCHEMA,
+                        currentSortValue,
+                        null,
+                        node.toString()
                 );
                 records.add(sourceRecord);
-
-                // 다음 쿼리를 위해 상태 업데이트
                 this.searchAfter = currentSortValue;
             }
             return records;
-        }catch (IOException e) {
+        } catch (IOException e) {
             log.warn("An I/O error occurred during the HTTP request. This is likely temporary.", e);
             throw new RetriableException("I/O error during HTTP request.", e);
         } catch (Exception e) {
