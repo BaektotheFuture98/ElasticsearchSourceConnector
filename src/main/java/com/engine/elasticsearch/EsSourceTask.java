@@ -29,15 +29,14 @@ public class EsSourceTask extends SourceTask {
     private String topic;
     private String index;
 
-    private final static String ES_FIELD = "index_name";
+    private final static String ES_FIELD = "es_index";
     private final static String OFFSET_VALUE_KEY = "last_search_after_value";
-
-    private long position = 0L;
     private String searchAfter = "";
 
     // [중요] Kafka Connect의 핵심 : 이름표(Partition)와 책갈피(Offset)
     private Map<String, String> sourcePartition;
     private Map<String, Object> sourceOffset;
+
 
     @Override
     public String version() {
@@ -54,15 +53,12 @@ public class EsSourceTask extends SourceTask {
 
         // 설정을 객체로 변환
         this.topic = config.getString(EsSourceConnectorConfig.TOPIC);
-
         // 실제 API 호출을 담당할 클라이언트 생성
         this.client = new EsClient(config);
         this.index = config.getString(EsSourceConnectorConfig.ES_INDEX);
-        // 이 데이터의 출처가 어디인지 이름표를 붙임
+        // 무슨 책인지 알아볼 수 있도록 이름표(Partition) 생성
         this.sourcePartition  = Collections.singletonMap(ES_FIELD, index);
-        // Kafka 내부 저장소에서 이 이름표("ES_FIELD")에 해당하는 마지막 offset을 얻어옴
         this.sourceOffset  = context.offsetStorageReader().offset(this.sourcePartition);
-
 
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
         if (lastOffset != null && lastOffset.containsKey(OFFSET_VALUE_KEY)) {
