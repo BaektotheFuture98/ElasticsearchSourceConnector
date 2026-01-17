@@ -24,13 +24,13 @@ public class EsSourceTask extends SourceTask {
     // 설정값 및 상태를 저장할 변수들
     private EsClient client;
     private String topic;
-    private String index;
+    private Object index;
 
     private final static String ES_FIELD = "es_index";
     private final static String SEARCH_AFTER_KEY = "search_after";
 
     // [중요] Kafka Connect의 핵심 : 이름표(Partition)와 책갈피(Offset)
-    private Map<String, String> sourcePartition;
+    private Map<String, Object> sourcePartition;
 
     // Elasticsearch 페이징을 위한 searchAfter 값
     private String searchAfter = "";
@@ -50,12 +50,13 @@ public class EsSourceTask extends SourceTask {
 
         // 설정을 객체로 변환
         this.topic = config.getString(EsSourceConnectorConfig.TOPIC);
+
         // 실제 API 호출을 담당할 클라이언트 생성
         this.client = new EsClient(config);
         this.index = config.getString(EsSourceConnectorConfig.ES_INDEX);
 
         // 무슨 책인지 알아볼 수 있도록 이름표(Partition) 생성
-        this.sourcePartition  = Collections.singletonMap(ES_FIELD, index);
+        this.sourcePartition  = Collections.singletonMap(ES_FIELD, (Object) index);
 
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
         if (lastOffset != null && lastOffset.containsKey(SEARCH_AFTER_KEY)) {
@@ -86,7 +87,7 @@ public class EsSourceTask extends SourceTask {
 
                 Map<String, Object> recordOffset = Collections.singletonMap(
                         SEARCH_AFTER_KEY,
-                        currentSortValue
+                        (Object) currentSortValue
                 );
 
                 SourceRecord sourceRecord = new SourceRecord(
