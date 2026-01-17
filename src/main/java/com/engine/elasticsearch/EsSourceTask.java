@@ -1,5 +1,4 @@
 package com.engine.elasticsearch;
-
 import com.engine.elasticsearch.config.EsSourceConnectorConfig;
 import com.engine.elasticsearch.elasticsearch.EsClient;
 
@@ -13,14 +12,12 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-///  즉시 종료를 해야하나?
 public class EsSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(EsSourceTask.class);
 
@@ -30,13 +27,13 @@ public class EsSourceTask extends SourceTask {
     private String index;
 
     private final static String ES_FIELD = "es_index";
-    private final static String OFFSET_VALUE_KEY = "last_search_after_value";
-    private String searchAfter = "";
+    private final static String SEARCH_AFTER_KEY = "search_after";
 
     // [중요] Kafka Connect의 핵심 : 이름표(Partition)와 책갈피(Offset)
     private Map<String, String> sourcePartition;
-    private Map<String, Object> sourceOffset;
 
+    // Elasticsearch 페이징을 위한 searchAfter 값
+    private String searchAfter = "";
 
     @Override
     public String version() {
@@ -56,15 +53,14 @@ public class EsSourceTask extends SourceTask {
         // 실제 API 호출을 담당할 클라이언트 생성
         this.client = new EsClient(config);
         this.index = config.getString(EsSourceConnectorConfig.ES_INDEX);
+
         // 무슨 책인지 알아볼 수 있도록 이름표(Partition) 생성
         this.sourcePartition  = Collections.singletonMap(ES_FIELD, index);
-        this.sourceOffset  = context.offsetStorageReader().offset(this.sourcePartition);
 
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
-        if (lastOffset != null && lastOffset.containsKey(OFFSET_VALUE_KEY)) {
+        if (lastOffset != null && lastOffset.containsKey(SEARCH_AFTER_KEY)) {
             // 저장된 searchAfter 값을 문자열로 그대로 복구
-            this.searchAfter = (String) lastOffset.get(OFFSET_VALUE_KEY);
-            log.info("Restored searchAfter offset: {}", this.searchAfter);
+            this.searchAfter = (String) lastOffset.get(SEARCH_AFTER_KEY);
         }
     }
 
@@ -79,17 +75,23 @@ public class EsSourceTask extends SourceTask {
             List<SourceRecord> records = new ArrayList<>();
 
             for (JsonNode node : response) {
-                String currentSortValue = node.get("sort").get(0).asString();
+                JsonNode sortNode = node.get("sort");
 
-                // Map<String, String> → Map<String, Object>로 변경
-                Map<String, Object> offset = Collections.singletonMap(
-                        OFFSET_VALUE_KEY,
-                        (Object) currentSortValue  // Object로 명시적 캐스팅
+                if (sortNode == null || !sortNode.isArray() || sortNode.isEmpty()) {
+                    log.warn("Sort field is missing or invalid, skipping record");
+                    continue;
+                }
+
+                String currentSortValue = sortNode.get(0).asString();
+
+                Map<String, Object> recordOffset = Collections.singletonMap(
+                        SEARCH_AFTER_KEY,
+                        currentSortValue
                 );
 
                 SourceRecord sourceRecord = new SourceRecord(
                         this.sourcePartition,
-                        offset,  // 이제 Map<String, Object> 타입
+                        recordOffset,  // 각 레코드별 독립적인 offset
                         this.topic,
                         Schema.STRING_SCHEMA,
                         currentSortValue,
@@ -97,8 +99,9 @@ public class EsSourceTask extends SourceTask {
                         node.toString()
                 );
                 records.add(sourceRecord);
-                this.searchAfter = currentSortValue;
+                this.searchAfter = currentSortValue;  // 마지막 값만 임시 저장
             }
+
             return records;
         } catch (IOException e) {
             log.warn("An I/O error occurred during the HTTP request. This is likely temporary.", e);
