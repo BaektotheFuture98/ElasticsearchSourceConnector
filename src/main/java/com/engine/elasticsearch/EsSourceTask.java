@@ -33,7 +33,7 @@ public class EsSourceTask extends SourceTask {
     private Map<String, Object> sourcePartition;
 
     // Elasticsearch 페이징을 위한 searchAfter 값
-    private String searchAfter = "";
+    private String searchAfter = null;
 
     @Override
     public String version() {
