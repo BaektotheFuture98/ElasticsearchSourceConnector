@@ -25,7 +25,6 @@ public class QueryUtils {
             node.set("sort", sortArray);
         }
 
-        // 2. search_after 추가 (빈 문자열이 아닐 때만!) ✅
         if (searchAfter != null && !searchAfter.isEmpty()) {
             ((ObjectNode) query).putArray("search_after").add(searchAfter);
         }

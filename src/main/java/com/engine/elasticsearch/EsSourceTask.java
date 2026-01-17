@@ -33,7 +33,7 @@ public class EsSourceTask extends SourceTask {
     private Map<String, Object> sourcePartition;
 
     // Elasticsearch 페이징을 위한 searchAfter 값
-    private String searchAfter = null;
+    private String searchAfter = "";
 
     @Override
     public String version() {
@@ -56,7 +56,7 @@ public class EsSourceTask extends SourceTask {
         this.index = config.getString(EsSourceConnectorConfig.ES_INDEX);
 
         // 무슨 책인지 알아볼 수 있도록 이름표(Partition) 생성
-        this.sourcePartition  = Collections.singletonMap(ES_FIELD, (Object) index);
+        this.sourcePartition  = Collections.singletonMap(ES_FIELD, index);
 
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
         if (lastOffset != null && lastOffset.containsKey(SEARCH_AFTER_KEY)) {
@@ -69,38 +69,40 @@ public class EsSourceTask extends SourceTask {
     public List<SourceRecord> poll() throws InterruptedException {
         Thread.sleep(1000);
         try {
-            ArrayNode response = client.search(this.searchAfter);
-
+                ArrayNode response = client.search(this.searchAfter);
             if (response == null || response.isEmpty()) return null;
-
             List<SourceRecord> records = new ArrayList<>();
+            String lastSortValue = null;
 
             for (JsonNode node : response) {
                 JsonNode sortNode = node.get("sort");
-
                 if (sortNode == null || !sortNode.isArray() || sortNode.isEmpty()) {
                     log.warn("Sort field is missing or invalid, skipping record");
                     continue;
                 }
-
                 String currentSortValue = sortNode.get(0).asString();
-
                 Map<String, Object> recordOffset = Collections.singletonMap(
                         SEARCH_AFTER_KEY,
-                        (Object) currentSortValue
+                        currentSortValue
                 );
-
+                //this(sourcePartition, sourceOffset, topic, (Integer)null, keySchema, key, valueSchema, value);
                 SourceRecord sourceRecord = new SourceRecord(
                         this.sourcePartition,
-                        recordOffset,  // 각 레코드별 독립적인 offset
+                        recordOffset,
                         this.topic,
-                        Schema.STRING_SCHEMA,
-                        currentSortValue,
-                        null,
-                        node.toString()
+                        null,                    // partition
+                        null,                    // keySchema
+                        null,                    // key
+                        Schema.STRING_SCHEMA,    // valueSchema
+                        node.toString()          // value
                 );
                 records.add(sourceRecord);
-                this.searchAfter = currentSortValue;  // 마지막 값만 임시 저장
+                lastSortValue = currentSortValue;  // 임시 저장만
+            }
+
+            // ✅ 루프 완료 후에만 searchAfter 업데이트
+            if (lastSortValue != null) {
+                this.searchAfter = lastSortValue;
             }
 
             return records;
