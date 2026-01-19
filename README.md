@@ -30,11 +30,14 @@ mvn clean package
 
 | 설정 키 | 설명 | 필수 | 기본값 |
 |---------|------|------|--------|
+| `connector.class` | 커넥터 클래스명 | ✅ | com.engine.elasticsearch.EsSourceConnector |
 | `elasticsearch.hosts` | Elasticsearch 호스트 주소 (콤마 구분) | ✅ | - |
 | `elasticsearch.index` | 읽어올 Elasticsearch 인덱스명 | ✅ | - |
 | `elasticsearch.query` | Elasticsearch 쿼리 (JSON 형식) | ✅ | - |
-| `elasticsearch.sort.field` | 정렬 필드명 | ✅ | - |
-| `topic` | Kafka 토픽명 | ✅ | - |
+| `elasticsearch.sort.field` | 정렬 필드명 (문서 고유 ID) | ✅ | - |
+| `connector.topic` | Kafka 토픽명 | ✅ | - |
+| `tasks.max` | 최대 태스크 수 | ✅ | 1 |
+| `name` | 커넥터 이름 | ✅ | - |
 | `elasticsearch.user` | Elasticsearch 사용자명 | ❌ | - |
 | `elasticsearch.password` | Elasticsearch 비밀번호 | ❌ | - |
 | `elasticsearch.query.size` | 한 번에 가져올 레코드 수 | ❌ | 200 |
@@ -45,17 +48,18 @@ mvn clean package
 
 ```json
 {
-  "name": "elasticsearch-source-connector",
+  "name": "EsSourceConnector",
   "config": {
     "connector.class": "com.engine.elasticsearch.EsSourceConnector",
     "tasks.max": "1",
     "elasticsearch.hosts": "localhost:9200",
     "elasticsearch.index": "my-index",
-    "elasticsearch.sort.field": "timestamp",
-    "elasticsearch.query": "{\"query\":{\"match_all\":{}}}",
+    "elasticsearch.sort.field": "doc_id",
+    "elasticsearch.query": "{\"query\": {\"query_string\": {\"query\": \"*\"}}}",
     "elasticsearch.user": "elastic",
-    "elasticsearch.password": "password",
-    "topic": "elasticsearch-data"
+    "elasticsearch.password": "******",
+    "elasticsearch.query.size": "100",
+    "connector.topic": "elasticsearch-source"
   }
 }
 ```
