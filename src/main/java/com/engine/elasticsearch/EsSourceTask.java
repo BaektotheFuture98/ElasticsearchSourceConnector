@@ -28,12 +28,14 @@ public class EsSourceTask extends SourceTask {
 
     private final static String ES_FIELD = "es_index";
     private final static String SEARCH_AFTER_KEY = "search_after";
+    private final static String OFFSET_KEY = "offset";
 
     // [중요] Kafka Connect의 핵심 : 이름표(Partition)와 책갈피(Offset)
     private Map<String, Object> sourcePartition;
 
     // Elasticsearch 페이징을 위한 searchAfter 값
     private String searchAfter = "";
+    private long offset = 0L;
 
     @Override
     public String version() {
@@ -59,9 +61,9 @@ public class EsSourceTask extends SourceTask {
         this.sourcePartition  = Collections.singletonMap(ES_FIELD, index);
 
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
-        if (lastOffset != null && lastOffset.containsKey(SEARCH_AFTER_KEY)) {
+        if (lastOffset != null && lastOffset.containsKey(OFFSET_KEY)) {
             // 저장된 searchAfter 값을 문자열로 그대로 복구
-            this.searchAfter = (String) lastOffset.get(SEARCH_AFTER_KEY);
+            this.offset = (Long) lastOffset.get(OFFSET_KEY);
         }
     }
 
@@ -69,7 +71,7 @@ public class EsSourceTask extends SourceTask {
     public List<SourceRecord> poll() throws InterruptedException {
         Thread.sleep(1000);
         try {
-                ArrayNode response = client.search(this.searchAfter);
+            ArrayNode response = client.search(this.searchAfter);
             if (response == null || response.isEmpty()) return null;
             List<SourceRecord> records = new ArrayList<>();
             String lastSortValue = null;
@@ -82,15 +84,15 @@ public class EsSourceTask extends SourceTask {
                 }
                 String currentSortValue = sortNode.get(0).asString();
                 Map<String, Object> recordOffset = Collections.singletonMap(
-                        SEARCH_AFTER_KEY,
-                        currentSortValue
+                        OFFSET_KEY,
+                        this.offset++
                 );
                 //this(sourcePartition, sourceOffset, topic, (Integer)null, keySchema, key, valueSchema, value);
                 SourceRecord sourceRecord = new SourceRecord(
                         this.sourcePartition,
                         recordOffset,
                         this.topic,
-                        null,                    // partition
+                        null,            // partition
                         null,                    // keySchema
                         null,                    // key
                         Schema.STRING_SCHEMA,    // valueSchema
