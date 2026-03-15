@@ -80,9 +80,9 @@ public class EsClient implements AutoCloseable {
 //                .build();
 //    }
 
-    public ArrayNode search(String search_after) throws Exception {
+    public ArrayNode search(ArrayNode searchAfter) throws Exception {
         Request request = new Request("GET", "/" + es_index + "/_search?size=" + search_size);
-        JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, sort, search_after);
+        JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, sort, searchAfter);
         request.setEntity(new NStringEntity(queryNode.toString(), ContentType.APPLICATION_JSON));
         Response response = client.performRequest(request);
         if (response == null) {
