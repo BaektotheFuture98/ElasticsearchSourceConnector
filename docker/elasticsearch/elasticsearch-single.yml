@@ -1,0 +1,44 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.type=single-node  # 싱글 노드 핵심 설정
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false # 테스트를 위해 보안 기능 해제
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - ${ES_PORT}:9200
+    networks:
+      - elastic
+    mem_limit: ${ES_MEM_LIMIT}
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - CSP_STRICT=false
+    ports:
+      - ${KIBANA_PORT}:5601
+    networks:
+      - elastic
+    mem_limit: ${KB_MEM_LIMIT}
+
+volumes:
+  es_data:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge # external 대신 자동으로 생성되도록 bridge 설정

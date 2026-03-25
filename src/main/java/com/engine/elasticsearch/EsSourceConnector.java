@@ -14,12 +14,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Kafka Connect Worker가 가장 먼저 로딩하는 SourceConnector 구현체.
+ * - 역할 1) 사용자 설정 검증
+ * - 역할 2) Task 클래스/설정 분배
+ * - 역할 3) 커넥터 라이프사이클(start/stop) 관리
+ */
 public class EsSourceConnector extends SourceConnector {
     private static final Logger log = LoggerFactory.getLogger(EsSourceConnector.class);
     private Map<String, String> config;
 
     @Override
     public void start(Map<String, String> props) {
+        // Connector 단에서 설정을 1차 검증해 Task 시작 전에 실패를 빠르게 노출한다.
         this.config = props;
         log.info("Elasticsearch Source Connector started with properties: {}", props);
         try {
@@ -36,10 +43,11 @@ public class EsSourceConnector extends SourceConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        /**
-        *  Task가 2개 이상인 경우 태스크마다 다른 설정값을 줄 때 사용한다.
-        *  여기서는 단순히 동일한 설정을 maxTasks 개수만큼 복제해서 반환한다.
-        */
+        /*
+         * Task가 2개 이상인 경우 태스크마다 다른 설정값을 줄 수 있다.
+         * 현재 구현은 파티셔닝 없이 "동일 설정"을 maxTasks 개수만큼 복제한다.
+         * 즉, 스케일 아웃 전략은 아직 단순 복제 형태다.
+         */
         List<Map<String, String>> taskConfigs = new ArrayList<>();
         Map<String, String> taskProps = new HashMap<>();
         taskProps.putAll(config);

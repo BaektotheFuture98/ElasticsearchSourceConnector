@@ -22,6 +22,10 @@ import java.util.Base64;
 import java.util.List;
 
 
+/**
+ * Elasticsearch REST API 호출 전담 클래스.
+ * Task는 이 클래스를 통해서만 ES와 통신한다.
+ */
 public class EsClient implements AutoCloseable {
     private final String es_hosts;
     private final String es_index;
@@ -43,7 +47,9 @@ public class EsClient implements AutoCloseable {
         this.sort = config.getString(EsSourceConnectorConfig.SORT);
         this.client = makeClient();
     }
+
     private RestClient makeClient() {
+        // 설정값이 "host1,host2" 형태라고 가정하고 RestClient 대상 목록으로 변환한다.
         List<String> list = Arrays.asList(es_hosts.split(","));
         HttpHost[] hostList = list.stream().map(host ->
                 new HttpHost(host, 9200, "http")
@@ -63,24 +69,9 @@ public class EsClient implements AutoCloseable {
 
         return builder.build();
     }
-//    private RestClient makeClient() {
-//
-//        List<String> list = Arrays.asList(es_hosts.split(","));
-//        HttpHost[] hostList = list.stream().map(host ->
-//                new HttpHost(host, 9200, "http")
-//        ).toArray(HttpHost[]::new);
-//
-//        String CREDENTIALS_STRING = es_user + ":" + es_password;
-//        String encodedBytes = Base64.getEncoder().encodeToString(CREDENTIALS_STRING.getBytes());
-//        Header[] headers = {
-//                new BasicHeader("Authorization", "Basic " + encodedBytes)
-//        };
-//        return RestClient.builder(hostList)
-//                .setDefaultHeaders(headers)
-//                .build();
-//    }
 
     public ArrayNode search(ArrayNode searchAfter) throws Exception {
+        // QueryUtils가 base query + sort + search_after를 합쳐 최종 DSL을 만든다.
         Request request = new Request("GET", "/" + es_index + "/_search?size=" + search_size);
         JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, sort, searchAfter);
         request.setEntity(new NStringEntity(queryNode.toString(), ContentType.APPLICATION_JSON));

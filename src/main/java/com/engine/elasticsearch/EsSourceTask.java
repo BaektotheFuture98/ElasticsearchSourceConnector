@@ -19,6 +19,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 실제 데이터 수집을 수행하는 SourceTask.
+ *
+ * 동작 개요:
+ * 1) start()에서 설정/클라이언트/이전 offset을 준비
+ * 2) poll()에서 Elasticsearch 조회 후 SourceRecord 리스트 생성
+ * 3) Kafka Connect가 각 레코드의 offset을 저장
+ */
 public class EsSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(EsSourceTask.class);
 
@@ -57,10 +65,11 @@ public class EsSourceTask extends SourceTask {
         this.client = new EsClient(config);
         this.index = config.getString(EsSourceConnectorConfig.ES_INDEX);
 
-        // 무슨 책인지 알아볼 수 있도록 이름표(Partition) 생성
+        // sourcePartition: 이 Task가 읽는 "소스 단위"를 식별하는 이름표.
+        // 여기서는 index 이름 하나를 파티션 키로 사용한다.
         this.sourcePartition = Collections.singletonMap(ES_FIELD, index);
 
-        // 저장된 offset 값 복구
+        // 동일 sourcePartition에 대해 이전에 저장된 offset이 있으면 재개 지점으로 사용한다.
         Map<String, Object> lastOffset = context.offsetStorageReader().offset(this.sourcePartition);
         if (lastOffset != null && lastOffset.containsKey(OFFSET_KEY)) {
             this.offset = (Long) lastOffset.get(OFFSET_KEY);
@@ -73,16 +82,20 @@ public class EsSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
+        // 과도한 폴링 방지용 고정 간격(샘플 구현).
         Thread.sleep(1000);
         try {
+            // search_after 기반으로 다음 페이지를 조회한다.
             ArrayNode response = client.search(this.searchAfter);
 
-            // 응답이 없으면 빈 리스트 반환 (재시도 방지)
+            // 새 데이터가 없으면 빈 리스트 반환.
+            // 예외가 아니므로 Task 실패/재시도 없이 다음 poll 주기로 넘어간다.
             if (response == null || response.isEmpty()) {
                 return new ArrayList<>();
             }
 
             List<SourceRecord> records = new ArrayList<>();
+            // 마지막 문서의 sort 값을 기억해 다음 페이지 시작점(search_after)으로 사용한다.
             JsonNode lastSortValue = null;
 
             for (JsonNode node : response) {
@@ -92,20 +105,21 @@ public class EsSourceTask extends SourceTask {
                     continue;
                 }
 
-                // 마지막 sort 값을 추적 (이것이 다음 offset이 됨)
+                // 문서별 sort 값을 추출한다.
                 JsonNode currentSortValue = sortNode.get(0);
 
-                // offset에 sort 값을 저장 (long 타입으로 변환)
+                // Kafka Connect offset 저장을 위해 long으로 변환한다.
+                // 주의: sort 필드가 숫자가 아닌 경우 hashCode로 대체 저장한다.
                 long sortValueAsLong;
                 if (currentSortValue.isNumber()) {
                     sortValueAsLong = currentSortValue.asLong();
                 } else {
-                    // sort 값이 문자열인 경우 hashCode 사용 (참고: 실제로는 sort 필드의 타입을 명확히 해야 함)
+                    // 실제 운영에서는 sort 필드 타입을 명확히 고정하는 편이 안전하다.
                     sortValueAsLong = currentSortValue.asString().hashCode();
                     log.warn("Sort value is not numeric, using hashCode for offset: {}", sortValueAsLong);
                 }
 
-                // 각 레코드마다 offset 업데이트
+                // 각 레코드에 해당 문서의 진행 위치(offset)를 같이 담아 전달한다.
                 Map<String, Object> recordOffset = Collections.singletonMap(
                         OFFSET_KEY,
                         sortValueAsLong
@@ -125,7 +139,7 @@ public class EsSourceTask extends SourceTask {
                 lastSortValue = currentSortValue;
             }
 
-            // 루프 완료 후 다음 페이징을 위해 searchAfter 업데이트
+            // 배치 처리 후 마지막 sort 값을 다음 poll의 search_after로 저장한다.
             if (lastSortValue != null) {
                 // searchAfter는 ArrayNode 형식이어야 함
                 ObjectMapper mapper = new ObjectMapper();
@@ -135,9 +149,11 @@ public class EsSourceTask extends SourceTask {
 
             return records;
         } catch (IOException e) {
+            // 일시적인 네트워크/IO 문제는 RetriableException으로 처리해 재시도 가능하게 한다.
             log.warn("An I/O error occurred during the HTTP request. This is likely temporary.", e);
             throw new RetriableException("I/O error during HTTP request.", e);
         } catch (Exception e) {
+            // 그 외 예외는 비재시도성 장애로 간주한다.
             log.error("An unexpected error occurred during the HTTP request.", e);
             throw new ConnectException("Unexpected error.");
         }

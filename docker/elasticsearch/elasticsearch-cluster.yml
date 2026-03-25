@@ -1,0 +1,160 @@
+version: '3.8'
+services:
+  master:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: master
+    environment:
+      - node.name=master
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.seed_hosts=hot01,hot02,hot03,warm
+      - cluster.initial_master_nodes=master
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - node.roles=[master]
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_master:/usr/share/elasticsearch/data
+    mem_limit: ${ES_MEM_LIMIT}
+    ports:
+      - ${ES_PORT}:9200
+
+  hot01:
+    depends_on:
+      - master
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: hot01
+    environment:
+      - node.name=hot01
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.seed_hosts=master,hot02,hot03,warm
+      - cluster.initial_master_nodes=master
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - node.attr.tier=hot
+      - node.roles=[data]
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_hot01:/usr/share/elasticsearch/data
+    mem_limit: ${ES_MEM_LIMIT}
+    ports:
+      - 9201:9200
+
+  hot02:
+    depends_on:
+      - master
+      - hot01
+
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: hot02
+    environment:
+      - node.name=hot02
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.seed_hosts=master,hot01,hot03,warm
+      - cluster.initial_master_nodes=master
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - node.attr.tier=hot
+      - node.roles=[data]      
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_hot02:/usr/share/elasticsearch/data
+    mem_limit: ${ES_MEM_LIMIT}
+    ports:
+      - 9202:9200
+
+  hot03:
+    depends_on:
+      - master
+      - hot01
+      - hot02
+      
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: hot03
+    environment:
+      - node.name=hot03
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.seed_hosts=master,hot01,hot02,warm
+      - cluster.initial_master_nodes=master
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - node.attr.tier=hot
+      - node.roles=[data]      
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_hot03:/usr/share/elasticsearch/data
+    mem_limit: ${ES_MEM_LIMIT}
+    ports:
+      - 9203:9200
+
+  warm:
+    depends_on:
+      - master
+      - hot01
+      - hot02
+      - hot03
+    
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: warm
+    environment:
+      - node.name=warm
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.seed_hosts=master,hot01,hot02,hot03
+      - cluster.initial_master_nodes=master
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - node.attr.tier=warm
+      - node.roles=[data]      
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_warm:/usr/share/elasticsearch/data
+    mem_limit: ${ES_MEM_LIMIT}
+    ports:
+      - 9204:9200
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: kibana
+    ports:
+      - ${KIBANA_PORT}:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://master:9200
+    mem_limit: ${KB_MEM_LIMIT}
+    depends_on:
+      - master
+      - hot01
+      - hot02
+      - hot03
+      - warm
+
+volumes:
+  data_master:
+    driver: local
+  data_hot01:
+    driver: local
+  data_hot02:
+    driver: local
+  data_hot03:
+    driver: local
+  data_warm:
+    driver: local
+
+networks:
+  default:
+    name: elastic
+    external: true

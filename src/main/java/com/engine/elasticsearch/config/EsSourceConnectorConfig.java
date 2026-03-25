@@ -7,6 +7,10 @@ import org.apache.kafka.common.config.ConfigDef.Importance;
 
 import java.util.Map;
 
+/**
+ * 커넥터 설정 스키마 정의 클래스.
+ * Kafka Connect가 이 ConfigDef를 사용해 필수값/타입/기본값을 검증한다.
+ */
 public class EsSourceConnectorConfig extends AbstractConfig {
 
     public static final String ES_SERVERS = "elasticsearch.hosts";
@@ -43,13 +47,13 @@ public class EsSourceConnectorConfig extends AbstractConfig {
             .define(TOPIC, Type.STRING, Importance.HIGH, TOPIC_DOC)
             .define(ES_USER, Type.STRING, null, Importance.LOW, ES_USER_DOC)
             .define(ES_PASSWORD, Type.STRING, null,Importance.LOW, ES_PASSWORD_DOC)
-            ///  Primary_Filed가 없다면?
+            // 향후 upsert/중복제거 전략에 사용할 수 있도록 primary key 설정 키를 열어둔다.
             .define(PRIMARY_FIELD, Type.STRING, null, Importance.MEDIUM, PRIMARY_FIELD_DOC)
             .define(SORT, Type.STRING, null, Importance.HIGH, SORT_DOC)
             .define(SIZE, Type.INT, 200, Importance.LOW, SIZE_DOC);
 
     public EsSourceConnectorConfig(Map<String, String> props) {
-        super(CONFIG, props); // AbstractConfig는 설정엔진
+        // AbstractConfig가 ConfigDef 기준으로 파싱/검증을 수행한다.
+        super(CONFIG, props);
     }
 }
-

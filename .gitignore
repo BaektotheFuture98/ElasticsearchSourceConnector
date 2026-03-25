@@ -36,3 +36,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Local Docker Connector Artifacts ###
+docker/kafka_connect/plugins/**/*.jar

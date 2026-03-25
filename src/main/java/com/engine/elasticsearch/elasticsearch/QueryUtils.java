@@ -17,9 +17,10 @@ public class QueryUtils {
      */
     public static JsonNode buildSearchAfterQuery(String baseQuery, String sort, ArrayNode searchAfter) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
+        // 사용자가 넣은 baseQuery(JSON 문자열)를 트리로 파싱한다.
         JsonNode query = mapper.readTree(baseQuery);
 
-        // 1. sort 필드 추가 (없을 경우)
+        // 1) baseQuery에 sort가 없고, 설정 sort 필드가 있으면 기본 asc 정렬을 보강한다.
         if (query.get("sort") == null && sort != null) {
             ObjectNode node = (ObjectNode) query;
 
@@ -34,8 +35,8 @@ public class QueryUtils {
             node.set("sort", sortArray);
         }
 
-        // 2. search_after 배열 추가 (있을 경우)
-        // search_after는 sort와 동일한 구조의 배열이어야 함
+        // 2) 이전 poll의 마지막 sort 값을 search_after로 주입한다.
+        //    search_after 배열 구조는 sort 필드 순서/타입과 동일해야 한다.
         if (searchAfter != null && searchAfter.size() > 0) {
             ObjectNode node = (ObjectNode) query;
             node.set("search_after", searchAfter);
