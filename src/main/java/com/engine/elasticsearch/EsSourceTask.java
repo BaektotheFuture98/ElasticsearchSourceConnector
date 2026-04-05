@@ -26,6 +26,11 @@ import java.util.Map;
  * 1) start()에서 설정/클라이언트/이전 offset을 준비
  * 2) poll()에서 Elasticsearch 조회 후 SourceRecord 리스트 생성
  * 3) Kafka Connect가 각 레코드의 offset을 저장
+ *
+ * 실행 순서(중요):
+ * - 첫 poll: searchAfter == null 로 시작 -> 첫 페이지 조회
+     * - n번째 poll: 이전 배치 마지막 sort 값을 search_after로 전달
+ * - 결과: 중복/누락을 줄이면서 페이지를 순차적으로 전진
  */
 public class EsSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(EsSourceTask.class);
@@ -85,6 +90,7 @@ public class EsSourceTask extends SourceTask {
         // 과도한 폴링 방지용 고정 간격(샘플 구현).
         Thread.sleep(1000);
         try {
+            // [1] Elasticsearch 조회 (현재 searchAfter 기준)
             // search_after 기반으로 다음 페이지를 조회한다.
             ArrayNode response = client.search(this.searchAfter);
 
@@ -94,6 +100,7 @@ public class EsSourceTask extends SourceTask {
                 return new ArrayList<>();
             }
 
+            // [2] ES 응답(JSON 문서들)을 Kafka SourceRecord 목록으로 변환
             List<SourceRecord> records = new ArrayList<>();
             // 마지막 문서의 sort 값을 기억해 다음 페이지 시작점(search_after)으로 사용한다.
             JsonNode lastSortValue = null;
@@ -139,6 +146,7 @@ public class EsSourceTask extends SourceTask {
                 lastSortValue = currentSortValue;
             }
 
+            // [3] 다음 poll을 위한 페이지 포인터 갱신 (search_after)
             // 배치 처리 후 마지막 sort 값을 다음 poll의 search_after로 저장한다.
             if (lastSortValue != null) {
                 // searchAfter는 ArrayNode 형식이어야 함
@@ -147,6 +155,7 @@ public class EsSourceTask extends SourceTask {
                 log.debug("Updated searchAfter: {}", this.searchAfter);
             }
 
+            // [4] 반환된 레코드는 Connect Worker가 Kafka topic으로 publish
             return records;
         } catch (IOException e) {
             // 일시적인 네트워크/IO 문제는 RetriableException으로 처리해 재시도 가능하게 한다.

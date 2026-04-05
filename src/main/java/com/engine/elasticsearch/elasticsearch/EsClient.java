@@ -71,14 +71,19 @@ public class EsClient implements AutoCloseable {
     }
 
     public ArrayNode search(ArrayNode searchAfter) throws Exception {
+        // [A] _search 요청 생성
         // QueryUtils가 base query + sort + search_after를 합쳐 최종 DSL을 만든다.
         Request request = new Request("GET", "/" + es_index + "/_search?size=" + search_size);
         JsonNode queryNode = QueryUtils.buildSearchAfterQuery(es_query, sort, searchAfter);
         request.setEntity(new NStringEntity(queryNode.toString(), ContentType.APPLICATION_JSON));
+
+        // [B] HTTP 호출 수행
         Response response = client.performRequest(request);
         if (response == null) {
             return null;
         }
+
+        // [C] hits.hits 배열만 추출해서 Task에 반환
         ObjectMapper mapper = new ObjectMapper();
         JsonNode hitshits = mapper.readTree(EntityUtils.toString(response.getEntity()))
                 .get("hits").get("hits");

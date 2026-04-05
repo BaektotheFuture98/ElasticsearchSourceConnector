@@ -1,0 +1,140 @@
+===== PAGE 1 =====
+경 력 기 술 서
+백 선 민 Baek seonmin
+이메일 : sun4461637@naver.com
+GitHub : https://github.com/BaektotheFuture98
+연락처 : 010-2828-1637
+■ 기술 스택 정리
+구분 상세
+• Java (검색엔진 기반 데이터 파이프라인),
+언어/쿼리 • Python (API 서버 개발, 로그 처리),
+• SQL (Process Manager, SQLD)
+• Elasticsearch
+검색엔진
+(클러스터 구축/운영, 색인/샤드 관리, 검색 파이프라인 설계, 사전 기반 필드 생성, 인덱스 라이프사이클 관리)
+• Kafka (PoC, Kafka 네이티브 환경 구성),
+데이터 인프라
+• Airflow (PoC, Airflow Fundamentals Certification )
+• Grafana (서비스별 사용량 대시보드 구성),
+모니터링 • Prometheus (검색 로그 기반 메트릭 수집, Kafka 메트릭 수집)
+• Kibana
+CI / CD • Jenkins
+■ 프로젝트 목차
+(cid:0) 반응량 재수집 프로세스(웹/Airflow Dag) 사내 운영용 (2인, 2026.02)
+(cid:0) Git/Jenkins 기반 Kafka 데이터 파이프라인 자동 배포 PoC(1인, 2025.09 ~ 2025.12)
+(cid:0) 연관어/감성 사전 데이터 전처리 파이프라인 최적화 (1인, 2025.01)
+(cid:0) 검색 인덱스 라이프사이클 관리 자동화 (1인, 2024.09)
+(cid:0) 검색 쿼리 메트릭 수집 및 장애진단 시스템 구축 (2인, 2025.06)
+(cid:0) NiFi Parameter contexts 기반 Thread/Task PoC (2인, 2024.11)
+■ 기타 업무 경험
+(cid:0) Quettai 플랫폼 데이터 파이프라인 개발
+(cid:0) Jenkins 기반 CI/CD 파이프라인 구성
+(cid:0) 고객사 맞춤 데이터 추출 프로세스 (Excel Export)
+(cid:0) Elasticsearch 클러스터 운영 (데이터 이동, 노드 확장)
+
+===== PAGE 2 =====
+■ 프로젝트
+반응량 재수집 프로세스 (웹/airflow Dag) 사내 운영용 개발
+특정 키워드에 대한 반응 수(댓글, 좋아요)를 재수집(최신화)하여 엑셀 문서로 추출해주는 프로세스 (웹 MVP 제외 모든 작업 담당)
+분석 플랫폼(Quettai)의 업그레이드로 데이터 스키마 및 타입이 변경됨에 따라 기존 재수집 프로세스의 전면적
+상황
+인 마이그레이션 필요
+Airflow를 도입하여 작업 흐름 가시성 확보, 장애 발생 시 즉각적인 대응 가능한 환경 구성
+목표
+• 파이프라인 설계 : JAR 실행 방식의 프로세스를 기능별 테스크로 세분화하여 Airflow 기반의 데이터 파이프
+라인으로 설계 및 개발
+고려사항 / • 운영 안정성 및 롤백 설계: DB 직접 접근 리스크를 방지하기 위해 별도의 롤백 DAG를 개발하여 시스템 오
+진행과정 류 시 신속한 복구 환경 마련
+• 웹 서비스 안정화 및 운영 : 바이브 코딩 기반 웹 MVP 모델을 인계받아 오류를 수정하고 예외 처리를 강화
+하여 운영 안정성 확보
+• 레거시 인프라 현대화 : 모니터링이 불가능했던 기존 Crontab 기반 환경을 Airflow로 전환하여 관리 용이
+• 데이터 파이프라인 가시성 확보 : 작업 진행 상태를 실시간으로 확인할 수 없었던 ‘블랙박스’ 구조를 시각화된
+성과 DAG로 개편하여 운영상의 불확실성을 근본적으로 해결
+• 장애 대응 체계 고도화 : DAG Failure 발생 시 텔레그램 연동 알림을 통해 장애 방치 시간을 최소화하고 프
+로세스 투명성 확보
+언어/Tool Airflow, Python, 바이브 코딩(Java Spring boot, Copilot 활용)
+Git/Jenkins 기반 Kafka 데이터 파이프라인 자동 배포 PoC
+상황 배치 기반 => 이벤트 스트리밍 기반 PoC
+이벤트 스트리밍 기반 프로세스 도입하여 기존 배치 기반 레거시 아키텍처 개선 요구
+목표(요청)
+• 레거시 아키텍처 분석, 사내에서 이뤄지고 있는 요청 상황 종합 (데이터 이관, API, 엑셀 추출, .. )
+• 빅데이터에 적합한 스트리밍 툴 선택 (재처리, 안정성, ..) -> Kafka 선택
+고려사항 /
+진행과정
+• 카프카 환경 구축 (Schema Registry, Kafka Broker, Kafka Connector)
+• Grafna, Prometheus, Kafka Exporter 활용하여 모니터링 환경 구성(메시지 처리량,지연시간(LAG),오프셋)
+카프카 데이터 파이프라인을 만들어보며 Connector을 통해 yml로 데이터 파이프라인 생성 가능 확인
+• Git/Jenkins 기반 파이프라인을 도입하여 설정 파일 통해 ES -> MySQL 데이터 파이프라인 생성
+• 개발자 개입 없이 설정 파일(yml)만으로 데이터 추출이 가능해져 요청 처리 지연을 해소하고,
+성과
+재사용/확장 가능한 구조로 운영 효율성 고도화 (API 서버 추가 개발)
+사내 및 대외 서비스로 확장 진행중
+• 서비스 확장성 확보를 위해 git/jenkins 기반 배포를 Airflow 기반으로 전환 (개발중)
+Kafka, Schema Registry,Kafka Connector, Logstash, Promethus, Grafana, Elasticsearch,
+언어/Tool
+MySQL, Jenkins, Git, Fast API
+
+===== PAGE 3 =====
+연관어/감성 사전 데이터 전처리 파이프라인 최적화
+상황 분석 프로세스 병목 현상
+연관어 및 감성 분석 사전 기반 재색인 프로세스 리팩토링, 스레드 풀 비교하여 속도 변화 측정 요청
+목표(요청)
+•DB/API에서 관리되는 연관어, 감성 단어 사전을 불러와 텍스트 매칭
+동작 과정
+•키워드 포함 여부를 확인해 메타 필드(연관어, 감성) 생성 후 Elasticsearch 재색인
+•JVM 모니터링 툴 활용 병목 구간 확인 => worker thread 유휴 시간이 상당부분 차지하는 것 확인 (원인)
+해결 과정 •FixedThreadPool + CompletableFuture 적용하여 worker thread에 작업 할당 (유휴시간 10%이내로 축소),
+Semaphore로 작업 큐 제어
+성과 색인 처리 속도 최대 65% 개선 (40초 > 16초)
+언어/Tool Java, Elasticsearch, MySQL
+검색 인덱스 라이프사이클 관리 자동화
+상황 Elasticsearch 클러스터에서 스토리지 티어 간 불균형 문제 발생
+ILM을 활용하여 스토리지간 불균형을 해소할 수 있는지 PoC 요청
+1. ILM을 활용하여 daily(Hot) → monthly(Warm)으로 phase 이동 Rollover 작성.
+목표 / 요청
+2. warm phase로 이동 시 primary shard 수 축소
+• 서비스 특성 상 과거 데이터에도 Update 필요 고려 (댓글, 반응 수 등)
+• 서비스에 운용중인 인덱스는 인덱스 이름에 언더바, 날짜를 넣어 데이터 관리
+고려사항 /
+진행과정
+• 테스트 서버에 ES 클러스터 구성하여 노드 별 티어 적용 (hot,warm , cold)
+• 요구사항에 맞는 ILM 정책 구성, 인덱스 템플릿에 Rollover 별칭을 적용하여 인덱스 생성/교체 자동화
+• ILM 적용 테스트 과정에서 Rollover 조건이 현 서비스의 날짜 기반 인덱스 네이밍 규칙과 맞지 않아, 일자
+변경 시 자동 롤오버가 정상적으로 동작하지 않는 한계 확인 (언더바 한계)
+• Warm Phase로 이동 시 shard 축소가 필요했으나, Warm Phase 특성상 데이터 수정이 불가해 운영 환경과
+맞지 않음을 검증
+성과
+• 우회적 대안 제시(Curator 활용)
+=> ILM의 구조적 제약을 우회하기 위해 Curator와 Shell Script, Crontab을 활용하여 현 서비스 인덱스 규칙
+에 맞는 관리 프로세스 구현
+=> 일 400만건 데이터 이동 자동화 검증
+언어/Tool Java, Crontab, Shell Script, Curator, Elasticsearch, Kibana
+
+===== PAGE 4 =====
+검색 쿼리 메트릭 수집 및 장애 진단 시스템 구축
+상황 Circuit Breaker로 인해 Elasticsearch Cluster의 데이터 노드 일부가 종종 내려가는 상황 발생
+Circuit breaker를 발생시키는 쿼리와 호출 주체를 식별할 수 있도록 모니터링 체계 구축
+목표 / 요청
+•Java 기반 로그 수집 Agent를 통해 쿼리, 실행시간, 요청일시 등의 메타데이터 색인
+•Crontab 스케줄링으로 Aggs 쿼리를 수행하는 Python 프로세스 실행
+해결과정
+=> 매분 Aggrgation 결과를 .prom 파일로 변환
+•Prometheus Counter 메트릭 수집 -> Grafana 대시보드에서 Top-N 검색어 및 사용자 요청량 시각화
+• Elasticsearch에서 발생하는 검색 쿼리와 실행시간 등 메타 데이터를 수집하여 Prometheus-Grafana 기반의
+검색 품질 및 장애 진단 모니터링 시스템 구축 => 대시보드를 통한 서비스별 요청량 시각화
+성과
+• 검색 품질 및 시스템 안정성 향상, 장애 원인 분석 시간 단축 => Kibana 통한 병목 유발 쿼리 검색 가능
+언어/Tool Python, Crontab, Java, Node Exporter, Prometheus, Grafana, Elasticsearch
+NiFi Parameter Contexts 기반 Thread/Task 최적화 POC
+상황 Nifi 도입 검증
+NiFi Parameter Contexts 기능을 활용하여 검색 인덱스 동적 운용(날짜 기반)가능성 검증.
+목표 / 요청
+• NiFi Time Driven Threads와 Concurrent Tasks 설정에 따른 CPU 점유율, 스레드 수, FlowFile 처리량 분석
+• Thread 증가 및 Schedule Duration 조정으로 최대 스레드 도달 시 처리량 변화 관찰
+해결과정 • Parameter Contexts REST API를 활용하여 인덱스 명칭의 날짜 값 동적 변경 실험
+• InvokeHTTP + ReplaceText 프로세서 조합으로 GET/POST 기반 Parameter Contexts 업데이트 PoC 구현
+• Regex 및 EL(Expression Language) 활용하여 Parameter 값 자동 변경 테스트
+• 검색 인덱스 기반 데이터 파이프라인 동적 운용 가능성 검증
+성과
+• Nifi 성능(FlowFile 처리량/ CPU 점유율)과 설정값 상관관계 파악
+언어/Tool NiFi, Java, Elasticsearch
