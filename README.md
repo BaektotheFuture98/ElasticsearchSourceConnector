@@ -107,26 +107,25 @@ src/
 
 ## 개발 상태
 
-### ✅ 완료된 기능
-- [x] 기본적인 Elasticsearch 연결
+### 완료된 기능
+- [x] 기본 Elasticsearch 연결
 - [x] search_after 기반 페이지네이션
-- [x] Kafka Connect 표준 구현
+- [x] Kafka Connect SourceConnector/SourceTask 구현
 - [x] Basic Auth 인증
+- [x] 기본 테스트 코드 추가
 
-### 🚧 개발 중인 기능
-- [ ] 오프셋 관리 및 중단 지점 복구
+### 부분 구현 / 개선 필요
+- [ ] 오프셋 기반 중단 지점 복구 완성
+- [ ] 테스트 의존성 정리 및 mvn test 통과
+- [ ] EsClient 종료 처리
+- [ ] Elasticsearch hosts 파싱 개선
+
+### 미구현
 - [ ] SSL/TLS 연결 지원
 - [ ] 멀티 인덱스 지원
-- [ ] 스키마 레지스트리 지원
+- [ ] Schema Registry 지원
 - [ ] 메트릭 수집
-- [ ] 에러 핸들링 개선
-
-### 📋 향후 계획
-- [ ] 단위 테스트 추가
-- [ ] 통합 테스트 추가
-- [ ] 문서 개선
-- [ ] 성능 최적화
-- [ ] CI/CD 파이프라인 구축
+- [ ] 에러 핸들링 고도화
 
 
 ---
