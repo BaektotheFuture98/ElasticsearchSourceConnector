@@ -1,9 +1,5 @@
 # Elasticsearch Source Connector for Apache Kafka
 
-🚧 **개발 중인 프로젝트입니다** 🚧
-
-이 프로젝트는 현재 개발 중이며, 기능과 API가 변경될 수 있습니다.
-
 ## 개요
 
 Elasticsearch에서 데이터를 읽어서 Apache Kafka 토픽으로 스트리밍하는 Kafka Connect Source Connector입니다.
