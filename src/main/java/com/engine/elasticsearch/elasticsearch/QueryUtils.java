@@ -1,11 +1,15 @@
 package com.engine.elasticsearch.elasticsearch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 public class QueryUtils {
+    private static final Logger log = LoggerFactory.getLogger(QueryUtils.class);
+
     /**
      * Elasticsearch search_after 쿼리 생성
      *
@@ -20,6 +24,7 @@ public class QueryUtils {
         // [Q1] 사용자 baseQuery 파싱
         // 사용자가 넣은 baseQuery(JSON 문자열)를 트리로 파싱한다.
         JsonNode query = mapper.readTree(baseQuery);
+        log.debug("Building Elasticsearch query: configuredSort={}, incomingSearchAfter={}", sort, searchAfter);
 
         // [Q2] sort 미지정 시 기본 sort를 주입 (search_after 필수 전제)
         // 1) baseQuery에 sort가 없고, 설정 sort 필드가 있으면 기본 asc 정렬을 보강한다.
@@ -35,6 +40,7 @@ public class QueryUtils {
             sortArray.add(sortDetails);
 
             node.set("sort", sortArray);
+            log.debug("Added default sort field to Elasticsearch query: sort={}", sort);
         }
 
         // [Q3] 이전 배치 마지막 sort를 search_after로 주입
@@ -43,8 +49,10 @@ public class QueryUtils {
         if (searchAfter != null && searchAfter.size() > 0) {
             ObjectNode node = (ObjectNode) query;
             node.set("search_after", searchAfter);
+            log.debug("Added search_after to Elasticsearch query: searchAfter={}", searchAfter);
         }
 
+        log.debug("Built Elasticsearch query: {}", query);
         return query;
     }
 }

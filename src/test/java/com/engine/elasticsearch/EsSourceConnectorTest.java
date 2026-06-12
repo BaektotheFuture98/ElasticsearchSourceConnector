@@ -2,6 +2,7 @@ package com.engine.elasticsearch;
 
 import com.engine.elasticsearch.config.EsSourceConnectorConfig;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -60,8 +61,8 @@ public class EsSourceConnectorTest {
 
         try {
             connector.start(invalidConfig);
-            fail("ConfigException should be thrown");
-        } catch (ConfigException e) {
+            fail("ConnectException should be thrown");
+        } catch (ConnectException e) {
             // 예상된 동작
         }
     }
@@ -97,11 +98,10 @@ public class EsSourceConnectorTest {
     @Test
     public void testMultipleTaskConfigs() {
         connector.start(connectorConfig);
-        int maxTasks = 3;
-        List<Map<String, String>> taskConfigs = connector.taskConfigs(maxTasks);
+        List<Map<String, String>> taskConfigs = connector.taskConfigs(3);
 
         assertNotNull(taskConfigs);
-        assertEquals(maxTasks, taskConfigs.size());
+        assertEquals(1, taskConfigs.size());
 
         // 모든 Task가 동일한 설정을 가져야 함
         for (Map<String, String> config : taskConfigs) {
@@ -115,10 +115,9 @@ public class EsSourceConnectorTest {
     @Test
     public void testManyTaskConfigs() {
         connector.start(connectorConfig);
-        int maxTasks = 10;
-        List<Map<String, String>> taskConfigs = connector.taskConfigs(maxTasks);
+        List<Map<String, String>> taskConfigs = connector.taskConfigs(10);
 
-        assertEquals(maxTasks, taskConfigs.size());
+        assertEquals(1, taskConfigs.size());
     }
 
     /**

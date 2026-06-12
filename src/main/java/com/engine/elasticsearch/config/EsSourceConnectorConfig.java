@@ -21,6 +21,7 @@ public class EsSourceConnectorConfig extends AbstractConfig {
 
     public static final String PRIMARY_FIELD = "elasticsearch.primary.key";
     public static final String PRIMARY_FIELD_DOC = "Unique primary key field in Elasticsearch documents";
+    public static final String PRIMARY_FIELD_DEFAULT = "_id";
 
     public static final String SORT = "elasticsearch.sort.field";
     public static final String SORT_DOC = "Sort field";
@@ -48,7 +49,7 @@ public class EsSourceConnectorConfig extends AbstractConfig {
             .define(ES_USER, Type.STRING, null, Importance.LOW, ES_USER_DOC)
             .define(ES_PASSWORD, Type.STRING, null,Importance.LOW, ES_PASSWORD_DOC)
             // 향후 upsert/중복제거 전략에 사용할 수 있도록 primary key 설정 키를 열어둔다.
-            .define(PRIMARY_FIELD, Type.STRING, null, Importance.MEDIUM, PRIMARY_FIELD_DOC)
+            .define(PRIMARY_FIELD, Type.STRING, PRIMARY_FIELD_DEFAULT, Importance.MEDIUM, PRIMARY_FIELD_DOC)
             .define(SORT, Type.STRING, null, Importance.HIGH, SORT_DOC)
             .define(SIZE, Type.INT, 200, Importance.LOW, SIZE_DOC);
 

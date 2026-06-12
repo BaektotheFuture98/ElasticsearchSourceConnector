@@ -47,13 +47,14 @@ public class EsSourceConnector extends SourceConnector {
          * Task가 2개 이상인 경우 태스크마다 다른 설정값을 줄 수 있다.
          * 현재 구현은 파티셔닝 없이 "동일 설정"을 maxTasks 개수만큼 복제한다.
          * 즉, 스케일 아웃 전략은 아직 단순 복제 형태다.
-         */
+        */
         List<Map<String, String>> taskConfigs = new ArrayList<>();
+        if (maxTasks <= 0) {
+            return taskConfigs;
+        }
         Map<String, String> taskProps = new HashMap<>();
         taskProps.putAll(config);
-        for (int i = 0; i < maxTasks; i++) {
-            taskConfigs.add(taskProps);
-        }
+        taskConfigs.add(taskProps);
         return taskConfigs;
     }
 

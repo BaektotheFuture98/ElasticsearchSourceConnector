@@ -39,3 +39,6 @@ build/
 
 ### Local Docker Connector Artifacts ###
 docker/kafka_connect/plugins/**/*.jar
+
+### Runtime Logs ###
+logs/

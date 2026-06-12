@@ -237,9 +237,6 @@ public class EsSourceTaskTest {
                 "  \"sort\": [1710498600000]\n" +
                 "}";
 
-        org.apache.kafka.connect.json.JsonConverter converter =
-            new org.apache.kafka.connect.json.JsonConverter();
-
         Map<String, Object> node = mapper.readValue(mockResponse, Map.class);
         assertNotNull(node);
         assertNotNull(node.get("_source"));
@@ -300,6 +297,48 @@ public class EsSourceTaskTest {
 
         // stop이 예외를 던지지 않아야 함
         task.stop();
+    }
+
+    @Test
+    public void testBuildRecordOffsetStoresFullSortArray() {
+        ArrayNode sort = mapper.createArrayNode();
+        sort.add(1710498600000L);
+        sort.add("doc-123");
+
+        Map<String, Object> offset = EsSourceTask.buildRecordOffset(sort);
+
+        assertEquals("[1710498600000,\"doc-123\"]", offset.get(EsSourceTask.SEARCH_AFTER_KEY));
+    }
+
+    @Test
+    public void testRestoreSearchAfterFromStoredSortArray() {
+        Map<String, Object> savedOffset = new HashMap<>();
+        savedOffset.put(EsSourceTask.SEARCH_AFTER_KEY, "[1710498600000,\"doc-123\"]");
+
+        ArrayNode restored = EsSourceTask.restoreSearchAfter(savedOffset);
+
+        assertNotNull(restored);
+        assertEquals(2, restored.size());
+        assertEquals(1710498600000L, restored.get(0).asLong());
+        assertEquals("doc-123", restored.get(1).asString());
+    }
+
+    @Test
+    public void testExtractRecordKeyFromElasticsearchId() throws Exception {
+        String hit = "{\"_id\":\"doc-123\",\"_source\":{\"id\":\"source-1\"},\"sort\":[1]}";
+
+        String key = EsSourceTask.extractRecordKey(mapper.readTree(hit), "_id");
+
+        assertEquals("doc-123", key);
+    }
+
+    @Test
+    public void testExtractRecordKeyFromConfiguredSourceField() throws Exception {
+        String hit = "{\"_id\":\"doc-123\",\"_source\":{\"id\":\"source-1\"},\"sort\":[1]}";
+
+        String key = EsSourceTask.extractRecordKey(mapper.readTree(hit), "id");
+
+        assertEquals("source-1", key);
     }
 }
 

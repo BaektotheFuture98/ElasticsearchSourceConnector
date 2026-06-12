@@ -175,7 +175,7 @@ public class EsSourceConnectorConfigTest {
         EsSourceConnectorConfig config = new EsSourceConnectorConfig(validConfig);
 
         String primaryKey = config.getString("elasticsearch.primary.key");
-        assertNull(primaryKey);
+        assertEquals("_id", primaryKey);
     }
 
     /**
